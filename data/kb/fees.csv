@@ -1,0 +1,11 @@
+product,fee_name,amount_brl,description_pt,description_en
+account,monthly_maintenance,12.90,Taxa de manutenção mensal da conta,Monthly account maintenance fee
+account,overdraft_fee,52.50,Taxa de cheque especial (por uso),Overdraft fee (per use)
+card,annual_fee_credit,0.00,Cartão de crédito sem anuidade,Credit card with no annual fee
+card,annual_fee_debit,0.00,Cartão de débito sem anuidade,Debit card with no annual fee
+card,late_payment,45.00,Multa por atraso de pagamento,Late payment fee
+card,foreign_transaction,3.50,Taxa de transação no exterior (percentual),Foreign transaction fee (percentage)
+pix,transfer_fee,0.00,Transferências PIX são gratuitas,PIX transfers are free
+transfer,timed_fee,8.50,Taxa para transferências TED,TED transfer fee
+investment,cdb_rate,12.50,Rendimento anual estimado CDB,Estimated annual CDB return
+investment,savings_rate,8.50,Rendimento anual estimado poupança,Estimated annual savings return
