@@ -60,3 +60,9 @@ models/
 *.bin
 *.gguf
 *.safetensors
+
+# Local planning / harness (not part of shipped project)
+CONTEXT.md
+PRD.md
+jobs/
+wayfinder/
