@@ -11,7 +11,9 @@ Qual a definição operacional de "sucesso da tarefa" — o desfecho primário d
 Decisões a fechar:
 
 1. Sucesso é binário por conversa, ou composto por componentes (rota correta, tool correta com argumentos corretos, resposta factualmente correta, ausência de vazamento de dado de outro cliente)?
-2. Quem julga: verificação determinística contra o gabarito do JSONL, o LLM-as-judge de `prompts/judge.md`, anotação manual do autor, ou combinação?
+2. Quem julga: verificação determinística contra o gabarito do JSONL, um LLM-as-judge a construir, anotação manual do autor, ou combinação?
+
+   **Correção registrada em 2026-07-31, ticket 03:** o LLM-as-judge **não existe**. O arquivo `prompts/judge.md` não é carregado por código nenhum — o diretório `prompts/` inteiro é morto, com os prompts reais embutidos em `agent.py:45-79`. Este ticket, portanto, não escolhe entre juízes existentes: ele decide qual construir.
 3. Se houver LLM-as-judge: qual modelo julga, e como a validade dele é defendida na banca. O padrão aceito é medir concordância com anotação humana numa amostra — quantos casos, qual limiar de concordância aceitável.
 4. O juiz pode ser o mesmo modelo que gera as respostas? Risco de viés de auto-avaliação — decidir e justificar.
 5. Como um caso que escala para humano é pontuado: sucesso, falha, ou categoria própria?
