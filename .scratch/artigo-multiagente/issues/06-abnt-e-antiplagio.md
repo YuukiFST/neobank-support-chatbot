@@ -17,8 +17,16 @@ Decisões a fechar:
    - Paráfrase é reescrita completa, não troca de sinônimos.
    - Texto rascunhado por LLM é reescrito na voz do autor antes de entrar no artigo — usar a skill `no-ai-slop`.
    - Qual verificador roda antes da entrega e em que momento.
-4. Idioma do artigo: português. Confirmar, e definir como termos técnicos em inglês são tratados (itálico, glossário, tradução).
+4. **Declaração de uso de IA.** `research/04-marcadores-de-ia.md` levantou que a Portaria CNPq nº 2.664/2026 e a Deliberação Unicamp CONSU-A-005/2026 exigem declaração explícita de uso de ferramenta de IA em trabalho acadêmico. Decidir: qual a política da sua instituição, onde a declaração entra no artigo (nota de rodapé, seção de método, agradecimentos), e o que exatamente ela declara. Declarar o uso é proteção, não confissão — o risco está em omitir e ser questionado depois.
+5. Idioma do artigo: português. Confirmar, e definir como termos técnicos em inglês são tratados (itálico, glossário, tradução).
 5. Onde o PDF e os fontes vivem: neste repo, ou fora dele.
+
+## Insumos
+
+Duas pesquisas alimentam este ticket sem bloqueá-lo:
+
+- [Normas ABNT aplicáveis a este artigo](11-normas-abnt.md) — o conteúdo normativo, em `research/05-normas-abnt.md`. A escolha de ferramenta do item 1 pode ser feita antes dela; a conferência final não.
+- [Marcadores linguísticos de texto gerado por IA](10-marcadores-de-texto-de-ia.md) — em `research/04-marcadores-de-ia.md`. Vira o checklist de revisão do item 3, aplicado antes da entrega.
 
 ## Answer
 
