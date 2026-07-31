@@ -2,7 +2,7 @@
 
 Type: grilling
 Status: open
-Blocked by: 03, 04, 07, 08, 09
+Blocked by: 04, 07, 08, 09, 14
 
 ## Question
 
@@ -41,6 +41,12 @@ Como o Qwen3.5-9B cabe nos 12 GB até em Q8_0, existe a opção de rodar Q4 como
 A família Qwen oscila de 14 a 18 pontos no BFCL V4 só com mudança de formatação do prompt.
 Os dois braços usam prompts diferentes por construção, então parte da diferença medida pode ser sensibilidade a formato, não arquitetura.
 Decidir como isso é controlado ou, no mínimo, declarado nas limitações.
+
+**11c. O sistema é de turno único, e o τ-bench não é.**
+Verificado em 2026-07-31: `services/agent_api/interface/app.py:234` monta o estado com uma única mensagem por requisição, e o grafo é compilado sem checkpointer.
+Não existe memória entre turnos.
+O τ-bench, adotado como referência de protocolo no ticket 04, avalia tarefas **multi-turno**.
+Decidir: ou o experimento se restringe a tarefas de turno único e declara isso como limitação e como desvio do protocolo de referência, ou implementar memória de conversa vira pré-requisito — o que aumenta o escopo e muda o custo de tokens por turno.
 
 **11. Contaminação de latência por VRAM.**
 Se os especialistas forem instâncias separadas do modelo que não cabem simultaneamente em 12 GB, a latência medida é troca de modelo na VRAM, não custo de arquitetura.

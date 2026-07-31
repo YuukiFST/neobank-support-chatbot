@@ -43,10 +43,23 @@ Fatos já levantados no charting: `eval/eval_set.jsonl` tem 15 casos; `eval/runn
 <!-- uma linha por ticket fechado -->
 
 - [Qual modelo local roda o experimento numa RTX 3060 12 GB](issues/01-modelo-local-rtx3060.md) — Qwen3.5-9B GGUF Q6_K ou Q8_0 (cabe inteiro nos 12 GB), reserva Gemma 4 12B QAT, runtime `llama-server`. Ambos os candidatos originais caíram: NVFP4 exige Blackwell, e o Bonsai-27B perde 21,6 pontos em tool calling multi-turno pela compressão. Descobriu de quebra que o braço A não usa tool calling do LLM — ver [O braço multi-agente precisa usar tool calling do LLM?](issues/09-o-que-esta-sendo-comparado.md).
+- [O que o harness de avaliação atual já faz](issues/03-inspecionar-harness-eval.md) — as quatro hipóteses sobre o código foram confirmadas com `arquivo:linha`. O runner não grava nada e não mede latência, tokens nem ferramentas; o LLM-as-judge **não existe** (`prompts/` é diretório morto); o dataset tem 15 casos com `pix_status` descoberto e dois casos impossíveis de passar. Nada do experimento existe hoje: o braço B, a instrumentação e o oráculo de sucesso precisam ser construídos do zero.
 - [Como declarar o uso de IA como auxiliar de pesquisa](issues/13-declaracao-de-uso-de-ia.md) — nenhuma norma obriga um aluno de graduação, mas declarar compensa: ser flagrado sem declarar custa o dobro da penalidade de declarar, e detalhar não piora. Lugar decidido: subseção numerada ao fim do Método. A ABNT não prevê elemento para isso. Três modelos prontos em `research/06-declaracao-de-ia.md`.
 - [Normas ABNT aplicáveis a este artigo](issues/11-normas-abnt.md) — NBR 6022:2018, **6023:2025**, **10520:2023**, 6024:2012, 6028:2021 e tabulação do IBGE, com modelos prontos em `research/05-normas-abnt.md`. Duas armadilhas: a citação agora é `(Silva, 2019)` e não `(SILVA, 2019)`, e a 6023:2025 não tem categoria para preprint nem para documentação de software — que é a maior parte das fontes deste artigo.
 - [Marcadores linguísticos de texto gerado por IA, em português acadêmico](issues/10-marcadores-de-texto-de-ia.md) — tabelas de vocabulário, sintaxe, estrutura e tipografia em `research/04-marcadores-de-ia.md`, com seção de mitos. Contra-achados: excesso de conectivos, voz passiva e vocabulário pobre **não** são marcadores de IA. Não existe estudo de deriva lexical em português, então a tabela de vocabulário é inferência transposta do inglês. Simplificar o texto para parecer humano aumenta o falso positivo dos detectores de 5% para 57%.
 - [Literatura primária sobre arquiteturas de agentes LLM](issues/02-literatura-primaria.md) — 37 fontes levantadas (14 revisadas por pares) em `research/02-literatura.md`; τ-bench define o sucesso a adotar, MAST sustenta a discussão, "AI agents that matter" legitima custo como desfecho. Achado que vira contribuição: não há evidência revisada por pares de que supervisor vença agente único.
+
+## Pré-requisito de código, fora deste mapa
+
+Uma auditoria do repositório em 2026-07-31 produziu `plans/` na raiz, com oito planos de implementação e um índice.
+A **fase 0** daqueles planos (001 a 005) é pré-requisito deste experimento: ela torna o projeto verificável, faz falha de infraestrutura parar de virar resposta válida, e instrumenta tokens, latência e chamadas de ferramenta — inclusive um registro por execução em JSONL, desenhado para a análise deste artigo.
+
+Regra de coordenação: ao fim da fase 0, **congelar o commit** e rodar todas as execuções medidas sobre ele.
+O artigo cita esse commit exato.
+Corrigir código no meio das execuções invalida a série.
+
+O plano `007-intents-que-nao-executam.md` altera `INTENT_TOOLS`, que é o objeto do ticket [O braço multi-agente precisa usar tool calling do LLM?](issues/09-o-que-esta-sendo-comparado.md).
+As duas decisões precisam ser tomadas juntas.
 
 ## Not yet specified
 
