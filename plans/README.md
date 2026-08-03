@@ -25,7 +25,7 @@ A ordem adotada resolve isso em três fases:
 
 | Plano | Título | Fase | Prioridade | Esforço | Depende de | Status |
 |---|---|---|---|---|---|---|
-| 001 | Tornar o pacote instalável e o CI verde | 0 | P1 | S | — | PRONTO — mypy em STOP (38 erros, decisão do dono) |
+| 001 | Tornar o pacote instalável e o CI verde | 0 | P1 | S | — | PRONTO |
 | 002 | CI executa todas as suítes; asserções endurecidas | 0 | P1 | S | 001 | TODO |
 | 003 | Guardrail de saída realmente bloqueia | 0 | P1 | M | 002 | TODO |
 | 004 | Falhas de infraestrutura param de virar resposta válida | 0 | P1 | M | 002 | TODO |
