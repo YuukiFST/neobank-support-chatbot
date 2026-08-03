@@ -57,7 +57,8 @@ Qualquer afirmação dele que entrar no artigo precisa ser rastreada até uma fo
 **Skills a consultar por sessão:** `research` para tickets AFK de leitura; `grilling` + `domain-modeling` para tickets de decisão; `no-ai-slop` para toda redação do artigo; `prove` se o harness de avaliação precisar de garantias.
 
 **Repositório sob estudo:** este próprio repo.
-Fatos já levantados no charting: `eval/eval_set.jsonl` tem 15 casos; `eval/runner.py` é o harness; `prompts/` contém `router.md`, `account.md`, `card.md`, `kb.md`, `risk.md`, `escalation.md` e `judge.md` (LLM-as-judge já existe).
+Fatos já levantados no charting: `eval/eval_set.jsonl` tem 15 casos; `eval/runner.py` é o harness; `prompts/` contém `router.md`, `account.md`, `card.md`, `kb.md`, `risk.md`, `escalation.md` e `judge.md`.
+**Corrigido pelo ticket 03:** a presença de `judge.md` sugeria um LLM-as-judge implementado, e ele não existe — `prompts/` é diretório morto, nenhum arquivo dele é lido por código.
 
 ## Decisions so far
 
@@ -83,7 +84,10 @@ O artigo cita esse commit exato.
 Corrigir código no meio das execuções invalida a série.
 
 O plano `007-intents-que-nao-executam.md` altera `INTENT_TOOLS`, que é o objeto do ticket [O braço multi-agente precisa usar tool calling do LLM?](issues/09-o-que-esta-sendo-comparado.md).
-As duas decisões precisam ser tomadas juntas.
+Aquele ticket foi resolvido em 2026-08-03 e já diz o que o plano 007 deve produzir: `INTENT_TOOLS` vira **filtro de visibilidade** de ferramenta, não despachante.
+Quem executar o 007 lê a resolução do ticket 09 antes de começar.
+
+**Estado do pré-requisito em 2026-08-03:** o plano 001 está PRONTO e mesclável pela branch `advisor/001-build-system` — pacote instalável, `ruff`, `ruff format`, `mypy --strict` e 42 testes unitários verdes. Restam 002 a 005 antes do congelamento.
 
 ## Not yet specified
 
