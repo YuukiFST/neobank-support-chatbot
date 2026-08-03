@@ -4,19 +4,15 @@ from __future__ import annotations
 
 import asyncio
 import json
-import sys
 import uuid
-from datetime import datetime
-from pathlib import Path
 
 import redis.asyncio as aioredis
-
-from shared.infrastructure.config import settings
-from shared.infrastructure.database import async_session, engine, Base
-from shared.infrastructure.observability import log
-from services.ingestion_worker.application.etl_pipeline import run_ingestion
 from sqlalchemy import text
 
+from services.ingestion_worker.application.etl_pipeline import run_ingestion
+from shared.infrastructure.config import settings
+from shared.infrastructure.database import async_session
+from shared.infrastructure.observability import log
 
 # Job types
 JOB_INGESTION = "ingestion"
@@ -53,12 +49,17 @@ async def process_escalation_job(payload: dict) -> None:
 
     # Publish escalation.created event
     redis = aioredis.from_url(settings.redis_url)
-    await redis.publish("events", json.dumps({
-        "event": "escalation.created",
-        "handoff_id": str(payload.get("id", "")),
-        "customer_id": payload["customer_id"],
-        "intent": payload.get("intent", "unknown"),
-    }))
+    await redis.publish(
+        "events",
+        json.dumps(
+            {
+                "event": "escalation.created",
+                "handoff_id": str(payload.get("id", "")),
+                "customer_id": payload["customer_id"],
+                "intent": payload.get("intent", "unknown"),
+            }
+        ),
+    )
     await redis.close()
 
     log.info("escalation_job_complete", handoff_id=payload.get("id"))

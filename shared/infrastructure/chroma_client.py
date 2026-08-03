@@ -4,6 +4,7 @@ from __future__ import annotations
 
 try:
     import chromadb
+
     CHROMA_AVAILABLE = True
 except ImportError:
     CHROMA_AVAILABLE = False
@@ -39,7 +40,9 @@ def query_kb(query: str, n_results: int = 3) -> list[str]:
         collection = get_or_create_collection()
         if collection.count() == 0:
             return []
-        results = collection.query(query_texts=[query], n_results=min(n_results, collection.count()))
+        results = collection.query(
+            query_texts=[query], n_results=min(n_results, collection.count())
+        )
         return results.get("documents", [[]])[0]
     except Exception:
         return []

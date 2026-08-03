@@ -7,7 +7,6 @@ guardrail_out: blocks data leakage, hallucinated financial advice, secret patter
 from __future__ import annotations
 
 import re
-from typing import Any
 
 # --- PII patterns ---
 CPF_PATTERN = re.compile(r"\d{3}\.?\d{3}\.?\d{3}-?\d{2}")
@@ -46,7 +45,14 @@ SECRET_PATTERNS = [
 
 
 class GuardrailResult:
-    __slots__ = ("passed", "reason", "blocked_pii", "injection_detected", "advice_detected", "secret_detected")
+    __slots__ = (
+        "passed",
+        "reason",
+        "blocked_pii",
+        "injection_detected",
+        "advice_detected",
+        "secret_detected",
+    )
 
     def __init__(
         self,

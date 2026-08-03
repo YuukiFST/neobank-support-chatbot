@@ -1,6 +1,7 @@
 """Streamlit chat frontend — NeoBank Support Chatbot."""
 
 import json
+
 import requests
 import streamlit as st
 

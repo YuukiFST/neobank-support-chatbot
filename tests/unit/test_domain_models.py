@@ -3,7 +3,6 @@
 import uuid
 from decimal import Decimal
 
-import pytest
 from shared.domain.models import (
     Account,
     Card,

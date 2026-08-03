@@ -10,9 +10,9 @@ from typing import Any
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from shared.infrastructure.llm import llm_completion
-from services.agent_api.application.agent import create_agent_graph, merge_graph_state
 from langchain_core.messages import HumanMessage
+
+from services.agent_api.application.agent import create_agent_graph, merge_graph_state
 
 
 async def run_eval_item(item: dict[str, Any], graph: Any) -> dict[str, Any]:
@@ -100,7 +100,7 @@ async def run_eval(eval_path: str = "eval/eval_set.jsonl") -> dict[str, Any]:
     # Summary
     passed = sum(1 for r in results if r["passed"])
     total = len(results)
-    print(f"\nResults: {passed}/{total} passed ({passed/total*100:.1f}%)")
+    print(f"\nResults: {passed}/{total} passed ({passed / total * 100:.1f}%)")
 
     return {
         "total": total,

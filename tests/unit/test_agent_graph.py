@@ -1,7 +1,6 @@
 """Unit tests for the LangGraph agent graph structure."""
 
-import pytest
-from services.agent_api.application.agent import create_agent_graph, AgentState
+from services.agent_api.application.agent import AgentState, create_agent_graph
 from services.agent_api.infrastructure.guardrails import guardrail_in, guardrail_out
 
 
@@ -18,7 +17,7 @@ class TestAgentGraph:
         # Get node names - nodes can be strings or objects with .name attribute
         nodes = []
         for node in graph_obj.nodes:
-            if hasattr(node, 'name'):
+            if hasattr(node, "name"):
                 nodes.append(node.name)
             else:
                 nodes.append(str(node))

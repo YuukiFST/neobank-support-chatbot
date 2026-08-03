@@ -41,7 +41,9 @@ class TestApiKey:
         monkeypatch.setattr(
             auth,
             "settings",
-            Settings(_env_file=None, api_key="secret", database_url="sqlite://", redis_url="redis://x"),
+            Settings(
+                _env_file=None, api_key="secret", database_url="sqlite://", redis_url="redis://x"
+            ),
         )
         with pytest.raises(HTTPException) as exc:
             await auth.verify_api_key(None)
@@ -55,6 +57,8 @@ class TestApiKey:
         monkeypatch.setattr(
             auth,
             "settings",
-            Settings(_env_file=None, api_key="secret", database_url="sqlite://", redis_url="redis://x"),
+            Settings(
+                _env_file=None, api_key="secret", database_url="sqlite://", redis_url="redis://x"
+            ),
         )
         await auth.verify_api_key("secret")
