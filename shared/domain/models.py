@@ -6,53 +6,52 @@ import enum
 import uuid
 from datetime import date, datetime
 from decimal import Decimal
-from typing import Optional
 
 from pydantic import BaseModel, Field
 
-
 # --- Enums ---
 
-class TransactionType(str, enum.Enum):
+
+class TransactionType(enum.StrEnum):
     PIX = "pix"
     TRANSFER = "transfer"
     CARD = "card"
     FEE = "fee"
 
 
-class TransactionStatus(str, enum.Enum):
+class TransactionStatus(enum.StrEnum):
     PENDING = "pending"
     SETTLED = "settled"
     FAILED = "failed"
 
 
-class CardKind(str, enum.Enum):
+class CardKind(enum.StrEnum):
     CREDIT = "credit"
     DEBIT = "debit"
 
 
-class CardState(str, enum.Enum):
+class CardState(enum.StrEnum):
     ACTIVE = "active"
     BLOCKED = "blocked"
 
 
-class InvoiceStatus(str, enum.Enum):
+class InvoiceStatus(enum.StrEnum):
     OPEN = "open"
     PAID = "paid"
 
 
-class InvestmentProduct(str, enum.Enum):
+class InvestmentProduct(enum.StrEnum):
     CDB = "cdb"
     SAVINGS = "savings"
 
 
-class HandoffStatus(str, enum.Enum):
+class HandoffStatus(enum.StrEnum):
     QUEUED = "queued"
     CLAIMED = "claimed"
     RESOLVED = "resolved"
 
 
-class Intent(str, enum.Enum):
+class Intent(enum.StrEnum):
     BALANCE = "balance"
     PIX_STATUS = "pix_status"
     CARD_INVOICE = "card_invoice"
@@ -64,18 +63,19 @@ class Intent(str, enum.Enum):
     HUMAN = "human"
 
 
-class Language(str, enum.Enum):
+class Language(enum.StrEnum):
     PT = "pt"
     EN = "en"
 
 
 # --- Entities ---
 
+
 class Customer(BaseModel):
     id: uuid.UUID = Field(default_factory=uuid.uuid4)
     name: str
     document: str  # CPF mask
-    address_cep: Optional[str] = None
+    address_cep: str | None = None
     language: Language = Language.PT
     created_at: datetime = Field(default_factory=datetime.utcnow)
 
@@ -94,8 +94,8 @@ class Transaction(BaseModel):
     amount: Decimal
     status: TransactionStatus = TransactionStatus.SETTLED
     risk_flag: bool = False
-    description: Optional[str] = None
-    reference: Optional[str] = None
+    description: str | None = None
+    reference: str | None = None
     created_at: datetime = Field(default_factory=datetime.utcnow)
 
 
@@ -105,7 +105,7 @@ class Card(BaseModel):
     kind: CardKind
     state: CardState = CardState.ACTIVE
     limit_amount: Decimal = Decimal("0.00")
-    last_four: Optional[str] = None
+    last_four: str | None = None
     created_at: datetime = Field(default_factory=datetime.utcnow)
 
 
@@ -115,7 +115,7 @@ class Invoice(BaseModel):
     month: str  # YYYY-MM
     total: Decimal = Decimal("0.00")
     status: InvoiceStatus = InvoiceStatus.OPEN
-    due_date: Optional[date] = None
+    due_date: date | None = None
     created_at: datetime = Field(default_factory=datetime.utcnow)
 
 
@@ -158,11 +158,12 @@ class CustomerFact(BaseModel):
     id: uuid.UUID = Field(default_factory=uuid.uuid4)
     customer_id: uuid.UUID
     fact: str
-    source_session_id: Optional[uuid.UUID] = None
+    source_session_id: uuid.UUID | None = None
     created_at: datetime = Field(default_factory=datetime.utcnow)
 
 
 # --- Handoff payload (structured escalation) ---
+
 
 class HandoffPayload(BaseModel):
     session_id: uuid.UUID
@@ -170,6 +171,6 @@ class HandoffPayload(BaseModel):
     intent: Intent
     conversation_summary: str
     entities: dict = Field(default_factory=dict)
-    risk_outcome: Optional[str] = None
+    risk_outcome: str | None = None
     suggested_resolution: str
     created_at: datetime = Field(default_factory=datetime.utcnow)

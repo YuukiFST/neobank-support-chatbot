@@ -19,30 +19,31 @@ from typing import Any
 from fastapi import Depends, FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
-from prometheus_client import generate_latest, CONTENT_TYPE_LATEST
+from langchain_core.messages import HumanMessage
+from prometheus_client import CONTENT_TYPE_LATEST, generate_latest
 from pydantic import BaseModel, Field
 from sqlalchemy import text
 
+from services.agent_api.application.agent import create_agent_graph, merge_graph_state
+from services.agent_api.infrastructure.mock_banking_api import load_seed_data
+from services.agent_api.infrastructure.mock_banking_api import router as mock_router
 from shared.infrastructure.auth import verify_api_key
 from shared.infrastructure.config import settings
-from shared.infrastructure.database import async_session, engine, Base
-from shared.infrastructure.rate_limit import check_rate_limit
+from shared.infrastructure.database import Base, async_session, engine
 from shared.infrastructure.observability import (
-    log,
-    CHAT_REQUESTS,
-    CHAT_LATENCY,
     ACTIVE_SESSIONS,
+    CHAT_LATENCY,
+    CHAT_REQUESTS,
     ESCALATIONS,
+    log,
 )
-from services.agent_api.infrastructure.mock_banking_api import router as mock_router, load_seed_data
-from services.agent_api.application.agent import create_agent_graph, merge_graph_state
-
-from langchain_core.messages import HumanMessage
+from shared.infrastructure.rate_limit import check_rate_limit
 
 MAX_MESSAGE_LENGTH = 4000
 
 
 # --- Lifespan ---
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -86,58 +87,100 @@ def create_app() -> FastAPI:
 
 # --- Seed data loader ---
 
+
 async def _load_seeds() -> None:
     """Load seed data from SQL seeds into the mock API."""
     async with async_session() as session:
-        result = await session.execute(text("SELECT id, name, document, address_cep, language FROM customers"))
-        customers = [{"id": str(r[0]), "name": r[1], "document": r[2], "address_cep": r[3], "language": r[4]} for r in result.fetchall()]
+        result = await session.execute(
+            text("SELECT id, name, document, address_cep, language FROM customers")
+        )
+        customers = [
+            {"id": str(r[0]), "name": r[1], "document": r[2], "address_cep": r[3], "language": r[4]}
+            for r in result.fetchall()
+        ]
 
         result = await session.execute(text("SELECT id, customer_id, balance FROM accounts"))
-        accounts_list = [{"id": str(r[0]), "customer_id": str(r[1]), "balance": float(r[2])} for r in result.fetchall()]
+        accounts_list = [
+            {"id": str(r[0]), "customer_id": str(r[1]), "balance": float(r[2])}
+            for r in result.fetchall()
+        ]
 
         result = await session.execute(
-            text("SELECT id, account_id, type, amount, status, risk_flag, description, reference, created_at FROM transactions ORDER BY created_at DESC LIMIT 50")
+            text(
+                "SELECT id, account_id, type, amount, status, risk_flag, description, "
+                "reference, created_at FROM transactions ORDER BY created_at DESC LIMIT 50"
+            )
         )
         transactions = [
             {
-                "id": str(r[0]), "account_id": str(r[1]), "type": r[2],
-                "amount": float(r[3]), "status": r[4], "risk_flag": r[5],
-                "description": r[6], "reference": r[7],
+                "id": str(r[0]),
+                "account_id": str(r[1]),
+                "type": r[2],
+                "amount": float(r[3]),
+                "status": r[4],
+                "risk_flag": r[5],
+                "description": r[6],
+                "reference": r[7],
                 "created_at": str(r[8]),
             }
             for r in result.fetchall()
         ]
 
-        result = await session.execute(text("SELECT id, account_id, kind, state, limit_amount, last_four FROM cards"))
+        result = await session.execute(
+            text("SELECT id, account_id, kind, state, limit_amount, last_four FROM cards")
+        )
         cards = [
-            {"id": str(r[0]), "account_id": str(r[1]), "kind": r[2], "state": r[3], "limit_amount": float(r[4]), "last_four": r[5]}
+            {
+                "id": str(r[0]),
+                "account_id": str(r[1]),
+                "kind": r[2],
+                "state": r[3],
+                "limit_amount": float(r[4]),
+                "last_four": r[5],
+            }
             for r in result.fetchall()
         ]
 
-        result = await session.execute(text("SELECT id, card_id, month, total, status, due_date FROM invoices"))
+        result = await session.execute(
+            text("SELECT id, card_id, month, total, status, due_date FROM invoices")
+        )
         invoices = [
-            {"id": str(r[0]), "card_id": str(r[1]), "month": r[2], "total": float(r[3]), "status": r[4], "due_date": str(r[5]) if r[5] else None}
+            {
+                "id": str(r[0]),
+                "card_id": str(r[1]),
+                "month": r[2],
+                "total": float(r[3]),
+                "status": r[4],
+                "due_date": str(r[5]) if r[5] else None,
+            }
             for r in result.fetchall()
         ]
 
-        result = await session.execute(text("SELECT id, customer_id, product, principal FROM investments"))
+        result = await session.execute(
+            text("SELECT id, customer_id, product, principal FROM investments")
+        )
         investments = [
             {"id": str(r[0]), "customer_id": str(r[1]), "product": r[2], "principal": float(r[3])}
             for r in result.fetchall()
         ]
 
-    load_seed_data({
-        "customers": {c["id"]: c for c in customers},
-        "accounts": {a["id"]: a for a in accounts_list},
-        "transactions": transactions,
-        "cards": cards,
-        "invoices": invoices,
-        "investments": investments,
-    })
-    log.info("seeds_loaded", customers=len(customers), accounts=len(accounts_list), cards=len(cards))
+    load_seed_data(
+        {
+            "customers": {c["id"]: c for c in customers},
+            "accounts": {a["id"]: a for a in accounts_list},
+            "transactions": transactions,
+            "cards": cards,
+            "invoices": invoices,
+            "investments": investments,
+        }
+    )
+    log.info(
+        "seeds_loaded", customers=len(customers), accounts=len(accounts_list), cards=len(cards)
+    )
 
 
 # --- Request/Response models ---
+
 
 class SessionRequest(BaseModel):
     customer_id: str
@@ -167,15 +210,17 @@ def _register_routes(application: FastAPI) -> None:
             return {"status": "healthy"}
         except Exception as e:
             log.error("health_check_failed", error=str(e))
-            raise HTTPException(status_code=503, detail="Service unhealthy")
+            raise HTTPException(status_code=503, detail="Service unhealthy") from e
 
-    @application.post("/sessions", response_model=SessionResponse, dependencies=[Depends(verify_api_key)])
+    @application.post(
+        "/sessions", response_model=SessionResponse, dependencies=[Depends(verify_api_key)]
+    )
     async def create_session(req: SessionRequest):
         """Create a new chat session."""
         try:
             customer_uuid = uuid.UUID(req.customer_id)
-        except ValueError:
-            raise HTTPException(status_code=400, detail="Invalid customer_id format")
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail="Invalid customer_id format") from exc
 
         async with async_session() as session:
             result = await session.execute(
@@ -187,14 +232,23 @@ def _register_routes(application: FastAPI) -> None:
 
             session_id = str(uuid.uuid4())
             await session.execute(
-                text("INSERT INTO sessions (id, customer_id, language) VALUES (:id, :customer_id, :language)"),
-                {"id": uuid.UUID(session_id), "customer_id": customer_uuid, "language": req.language},
+                text(
+                    "INSERT INTO sessions (id, customer_id, language) "
+                    "VALUES (:id, :customer_id, :language)"
+                ),
+                {
+                    "id": uuid.UUID(session_id),
+                    "customer_id": customer_uuid,
+                    "language": req.language,
+                },
             )
             await session.commit()
 
         ACTIVE_SESSIONS.inc()
         log.info("session_created", session_id=session_id, customer_id=req.customer_id)
-        return SessionResponse(session_id=session_id, customer_id=req.customer_id, language=req.language)
+        return SessionResponse(
+            session_id=session_id, customer_id=req.customer_id, language=req.language
+        )
 
     @application.post("/chat", dependencies=[Depends(verify_api_key)])
     async def chat(req: ChatRequest, request: Request):
@@ -207,8 +261,8 @@ def _register_routes(application: FastAPI) -> None:
 
         try:
             session_uuid = uuid.UUID(req.session_id)
-        except ValueError:
-            raise HTTPException(status_code=400, detail="Invalid session_id format")
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail="Invalid session_id format") from exc
 
         async with async_session() as session:
             result = await session.execute(
@@ -256,12 +310,13 @@ def _register_routes(application: FastAPI) -> None:
                         if node_name == "router" and node_output.get("intent"):
                             intent = node_output["intent"]
                             CHAT_REQUESTS.labels(intent=intent, language=language).inc()
-                            yield f"data: {json.dumps({'type': 'tool', 'data': f'Routed to: {intent}'})}\n\n"
+                            routed = json.dumps({"type": "tool", "data": f"Routed to: {intent}"})
+                            yield f"data: {routed}\n\n"
 
                         if node_output.get("response"):
                             response_text = node_output["response"]
                             for i in range(0, len(response_text), 10):
-                                chunk = response_text[i:i + 10]
+                                chunk = response_text[i : i + 10]
                                 yield f"data: {json.dumps({'type': 'token', 'data': chunk})}\n\n"
                             response_streamed = True
 
@@ -273,8 +328,10 @@ def _register_routes(application: FastAPI) -> None:
                             async with async_session() as db:
                                 await db.execute(
                                     text(
-                                        "INSERT INTO handoffs (id, session_id, customer_id, payload, status) "
-                                        "VALUES (:id, :session_id, :customer_id, :payload, 'queued')"
+                                        "INSERT INTO handoffs "
+                                        "(id, session_id, customer_id, payload, status) "
+                                        "VALUES (:id, :session_id, :customer_id, :payload, "
+                                        "'queued')"
                                     ),
                                     {
                                         "id": uuid.uuid4(),
@@ -302,9 +359,12 @@ def _register_routes(application: FastAPI) -> None:
                 async with async_session() as db:
                     await db.execute(
                         text(
-                            "INSERT INTO session_metrics (session_id, turns, latency_p95_ms, updated_at) "
+                            "INSERT INTO session_metrics "
+                            "(session_id, turns, latency_p95_ms, updated_at) "
                             "VALUES (:session_id, 1, :latency, NOW()) "
-                            "ON CONFLICT (session_id) DO UPDATE SET turns = session_metrics.turns + 1, latency_p95_ms = :latency, updated_at = NOW()"
+                            "ON CONFLICT (session_id) DO UPDATE SET "
+                            "turns = session_metrics.turns + 1, "
+                            "latency_p95_ms = :latency, updated_at = NOW()"
                         ),
                         {"session_id": session_uuid, "latency": int(latency * 1000)},
                     )
@@ -312,7 +372,10 @@ def _register_routes(application: FastAPI) -> None:
 
             except Exception as e:
                 log.error("chat_error", error=str(e), session_id=req.session_id)
-                yield f"data: {json.dumps({'type': 'error', 'data': 'An internal error occurred. Please try again.'})}\n\n"
+                error_payload = json.dumps(
+                    {"type": "error", "data": "An internal error occurred. Please try again."}
+                )
+                yield f"data: {error_payload}\n\n"
                 yield f"data: {json.dumps({'type': 'done', 'data': ''})}\n\n"
 
         return StreamingResponse(event_stream(), media_type="text/event-stream")

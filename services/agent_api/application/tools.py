@@ -30,7 +30,8 @@ async def get_transactions(customer_id: str, limit: int = 10) -> str:
     lines = []
     for t in txns:
         lines.append(
-            f"- {t['created_at'][:10]} | {t['type']} | R$ {float(t['amount']):.2f} | {t['status']} | {t.get('description', '')}"
+            f"- {t['created_at'][:10]} | {t['type']} | R$ {float(t['amount']):.2f} "
+            f"| {t['status']} | {t.get('description', '')}"
         )
     return "Recent transactions:\n" + "\n".join(lines)
 
@@ -43,7 +44,8 @@ async def get_cards(customer_id: str) -> str:
     lines = []
     for c in cards:
         lines.append(
-            f"- Card ****{c.last_four} (id={c.card_id}, {c.kind}) | {c.state} | Limit: R$ {c.limit_amount:.2f}"
+            f"- Card ****{c.last_four} (id={c.card_id}, {c.kind}) | {c.state} "
+            f"| Limit: R$ {c.limit_amount:.2f}"
         )
     return "Cards:\n" + "\n".join(lines)
 
