@@ -6,6 +6,7 @@ import enum
 import uuid
 from datetime import date, datetime
 from decimal import Decimal
+from typing import Any
 
 from pydantic import BaseModel, Field
 
@@ -139,7 +140,7 @@ class Handoff(BaseModel):
     id: uuid.UUID = Field(default_factory=uuid.uuid4)
     session_id: uuid.UUID
     customer_id: uuid.UUID
-    payload: dict
+    payload: dict[str, Any]
     status: HandoffStatus = HandoffStatus.QUEUED
     created_at: datetime = Field(default_factory=datetime.utcnow)
 
@@ -170,7 +171,7 @@ class HandoffPayload(BaseModel):
     customer_id: uuid.UUID
     intent: Intent
     conversation_summary: str
-    entities: dict = Field(default_factory=dict)
+    entities: dict[str, Any] = Field(default_factory=dict)
     risk_outcome: str | None = None
     suggested_resolution: str
     created_at: datetime = Field(default_factory=datetime.utcnow)

@@ -9,13 +9,15 @@ try:
 except ImportError:
     CHROMA_AVAILABLE = False
 
+from typing import Any
+
 from shared.infrastructure.config import settings
 
-chroma_client = None
+chroma_client: Any = None
 KB_COLLECTION = "neobank_kb"
 
 
-def _get_client():
+def _get_client() -> Any:
     global chroma_client
     if chroma_client is None:
         if not CHROMA_AVAILABLE:
@@ -24,7 +26,7 @@ def _get_client():
     return chroma_client
 
 
-def get_or_create_collection():
+def get_or_create_collection() -> Any:
     client = _get_client()
     return client.get_or_create_collection(
         name=KB_COLLECTION,
@@ -43,6 +45,7 @@ def query_kb(query: str, n_results: int = 3) -> list[str]:
         results = collection.query(
             query_texts=[query], n_results=min(n_results, collection.count())
         )
-        return results.get("documents", [[]])[0]
+        documents: list[str] = results.get("documents", [[]])[0]
+        return documents
     except Exception:
         return []

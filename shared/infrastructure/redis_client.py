@@ -7,5 +7,5 @@ from shared.infrastructure.config import settings
 redis_pool = redis.ConnectionPool.from_url(settings.redis_url, decode_responses=True)
 
 
-async def get_redis() -> redis.Redis:  # type: ignore[type-arg]
+async def get_redis() -> redis.Redis:
     return redis.Redis(connection_pool=redis_pool)

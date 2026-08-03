@@ -36,7 +36,7 @@ KB_BASE_DIR = Path(__file__).resolve().parents[3] / "data" / "kb"
 _model = None
 
 
-def _get_model():
+def _get_model() -> Any:
     global _model
     if _model is None:
         if not ST_AVAILABLE:
@@ -96,7 +96,7 @@ def extract_kb_sources(data_dir: str = "data/kb") -> list[dict[str, Any]]:
 
 def _chunk_markdown(content: str, source: str, chunk_size: int = 500) -> list[dict[str, Any]]:
     """Chunk markdown content by section headers."""
-    chunks = []
+    chunks: list[dict[str, Any]] = []
     sections = re.split(r"\n(?=##\s)", content)
 
     for section in sections:
@@ -144,7 +144,7 @@ def _chunk_markdown(content: str, source: str, chunk_size: int = 500) -> list[di
 
 def _chunk_csv(content: str, source: str) -> list[dict[str, Any]]:
     """Chunk CSV content — each row becomes a document."""
-    chunks = []
+    chunks: list[dict[str, Any]] = []
     lines = content.strip().split("\n")
     if len(lines) < 2:
         return chunks

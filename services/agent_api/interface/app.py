@@ -14,9 +14,9 @@ import json
 import time
 import uuid
 from contextlib import asynccontextmanager
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
-from fastapi import Depends, FastAPI, HTTPException, Request
+from fastapi import Depends, FastAPI, HTTPException, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 from langchain_core.messages import HumanMessage
@@ -39,6 +39,9 @@ from shared.infrastructure.observability import (
 )
 from shared.infrastructure.rate_limit import check_rate_limit
 
+if TYPE_CHECKING:
+    from collections.abc import AsyncIterator
+
 MAX_MESSAGE_LENGTH = 4000
 
 
@@ -46,7 +49,7 @@ MAX_MESSAGE_LENGTH = 4000
 
 
 @asynccontextmanager
-async def lifespan(app: FastAPI):
+async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     """Startup/shutdown lifecycle."""
     log.info("starting_agent_api", provider=settings.llm_provider)
 
@@ -202,7 +205,7 @@ def _register_routes(application: FastAPI) -> None:
     """Register API routes on the application."""
 
     @application.get("/health")
-    async def health():
+    async def health() -> dict[str, str]:
         """Health check — verifies database connectivity."""
         try:
             async with async_session() as session:
@@ -215,7 +218,7 @@ def _register_routes(application: FastAPI) -> None:
     @application.post(
         "/sessions", response_model=SessionResponse, dependencies=[Depends(verify_api_key)]
     )
-    async def create_session(req: SessionRequest):
+    async def create_session(req: SessionRequest) -> SessionResponse:
         """Create a new chat session."""
         try:
             customer_uuid = uuid.UUID(req.customer_id)
@@ -251,7 +254,7 @@ def _register_routes(application: FastAPI) -> None:
         )
 
     @application.post("/chat", dependencies=[Depends(verify_api_key)])
-    async def chat(req: ChatRequest, request: Request):
+    async def chat(req: ChatRequest, request: Request) -> StreamingResponse:
         """SSE streaming chat endpoint."""
         start_time = time.time()
         graph = request.app.state.agent_graph
@@ -282,7 +285,7 @@ def _register_routes(application: FastAPI) -> None:
             cust_row = result.fetchone()
             customer_document = cust_row[0] if cust_row else ""
 
-        async def event_stream():
+        async def event_stream() -> AsyncIterator[str]:
             try:
                 state: dict[str, Any] = {
                     "messages": [HumanMessage(content=req.message)],
@@ -381,9 +384,9 @@ def _register_routes(application: FastAPI) -> None:
         return StreamingResponse(event_stream(), media_type="text/event-stream")
 
     @application.get("/metrics")
-    async def metrics():
+    async def metrics() -> Response:
         """Prometheus metrics endpoint."""
-        return StreamingResponse(generate_latest(), media_type=CONTENT_TYPE_LATEST)
+        return Response(generate_latest(), media_type=CONTENT_TYPE_LATEST)
 
 
 app = create_app()

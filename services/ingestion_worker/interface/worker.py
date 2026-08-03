@@ -5,6 +5,7 @@ from __future__ import annotations
 import asyncio
 import json
 import uuid
+from typing import Any
 
 import redis.asyncio as aioredis
 from sqlalchemy import text
@@ -19,7 +20,7 @@ JOB_INGESTION = "ingestion"
 JOB_ESCALATION = "escalation"
 
 
-async def process_ingestion_job(payload: dict) -> None:
+async def process_ingestion_job(payload: dict[str, Any]) -> None:
     """Process a KB ingestion job."""
     data_dir = payload.get("data_dir", "data/kb")
     log.info("processing_ingestion_job", data_dir=data_dir)
@@ -27,7 +28,7 @@ async def process_ingestion_job(payload: dict) -> None:
     log.info("ingestion_job_complete", chunks=count)
 
 
-async def process_escalation_job(payload: dict) -> None:
+async def process_escalation_job(payload: dict[str, Any]) -> None:
     """Process an escalation job — persist handoff and publish event."""
     log.info("processing_escalation_job", payload=payload)
 
