@@ -5,7 +5,12 @@ Label: `wayfinder:map`
 ## Destination
 
 Artigo científico de 5 a 7 páginas, em normas ABNT, escrito e entregue na disciplina de Metodologia Científica.
-O artigo reporta um experimento controlado sobre este repositório comparando arquitetura multi-agente (supervisor LangGraph + especialistas) contra agente único com tool calling, medindo sucesso de tarefa como desfecho primário e latência, tokens e custo como secundários.
+
+O artigo ancora-se em **dois trabalhos revisados por pares do mesmo tema** — a seleção de ferramentas por um LLM degrada conforme o tamanho e a redação do conjunto exposto — e os demonstra na prática sobre este repositório.
+O experimento mantém modelo, ferramentas e tarefas fixos e varia apenas **o escopo de ferramentas visível por chamada**.
+
+Desfecho primário: **acurácia de seleção de ferramenta**. Secundários: latência, tokens e sucesso de tarefa.
+
 O esforço termina com o PDF final entregue, incluindo os números do experimento rodado em hardware local.
 
 ## Notes
@@ -21,7 +26,23 @@ O esforço termina com o PDF final entregue, incluindo os números do experiment
 - Apresentação será em vídeo, gravada no PC de casa: RTX 3060 12 GB.
 - Modelo roda local por causa da apresentação — provider local, não API paga.
 - **Modelo escolhido: Qwen3.5-9B** (decidido pelo usuário em 2026-07-31, aceitando a recomendação do ticket 01). Quantização exata e runtime ficam para o ticket 05.
-- Pergunta de pesquisa (rascunho, aceito na sessão de charting): a arquitetura multi-agente supervisor+especialistas entrega ganho de sucesso de tarefa suficiente para justificar seu custo em latência e tokens, comparada a um agente único com tool calling, num chatbot de suporte bancário?
+**Requisito da disciplina, declarado pelo usuário em 2026-08-03:** o trabalho exige **dois artigos científicos sobre o mesmo tema** e uma **demonstração prática** ligada a eles. O projeto ser protótipo, com código fraco e funcionalidade faltando, é aceito — a demonstração pode expor o que falta.
+
+**Âncoras escolhidas (2026-08-03), ambas revisadas por pares:**
+
+- PARAMANAYAKAM, Varatheepan et al. **Less is more**: optimizing function calling for LLM execution on edge devices. DATE 2025. arXiv:2411.15399. — reduzir o conjunto de ferramentas exposto melhora function calling; a falha é de **seleção**, não de janela de contexto. Ficha em `research/02-literatura.md` §3.3.
+- BLANKENSTEIN, Thierry et al. **BiasBusters**: uncovering and mitigating tool selection bias in large language models. ICLR 2026. arXiv:2510.00307. — a seleção é enviesada pela similaridade semântica entre consulta e metadados da ferramenta; pequenas edições de descrição deslocam a escolha. Mitigação proposta: filtrar para um subconjunto relevante antes de escolher. Ficha em §3.5.
+
+Os dois convergem no mesmo mecanismo: **o que o modelo vê por chamada determina a escolha**. É esse mecanismo que o experimento reproduz.
+
+**Reenquadramento do eixo primário (2026-08-03).**
+O eixo deixa de ser "multi-agente contra agente único" e passa a ser **escopo de ferramentas por chamada**.
+A arquitetura multi-agente entra como **um mecanismo de partição de ferramentas** — precisamente a mitigação que os dois papers propõem (k-NN sobre a biblioteca em Less is more; filtragem para subconjunto relevante em BiasBusters).
+Consequência prática: o "terceiro braço" do ticket 07 deixa de ser opcional e vira condição central do desenho.
+
+- Pergunta de pesquisa (revista em 2026-08-03): o ganho atribuído à arquitetura multi-agente vem da arquitetura em si, ou do escopo reduzido de ferramentas que ela impõe a cada chamada do modelo?
+
+**Fontes que continuam citáveis, agora como fundamentação e método, não como âncora:** MAST (Cemri et al., NeurIPS 2025) e Xu et al. para a discussão de multi-agente; τ-bench (Yao et al., ICLR 2025) para a definição de sucesso; OpenAI e Anthropic (§3.1, §3.2, §3.4) como convergência independente de fornecedor, sempre declarada como não revisada.
 
 **Restrição inegociável do usuário: plágio é crime.**
 Toda referência é citada; nenhum trecho é copiado.
@@ -47,6 +68,7 @@ Fatos já levantados no charting: `eval/eval_set.jsonl` tem 15 casos; `eval/runn
 - [Como declarar o uso de IA como auxiliar de pesquisa](issues/13-declaracao-de-uso-de-ia.md) — nenhuma norma obriga um aluno de graduação, mas declarar compensa: ser flagrado sem declarar custa o dobro da penalidade de declarar, e detalhar não piora. Lugar decidido: subseção numerada ao fim do Método. A ABNT não prevê elemento para isso. Três modelos prontos em `research/06-declaracao-de-ia.md`.
 - [Normas ABNT aplicáveis a este artigo](issues/11-normas-abnt.md) — NBR 6022:2018, **6023:2025**, **10520:2023**, 6024:2012, 6028:2021 e tabulação do IBGE, com modelos prontos em `research/05-normas-abnt.md`. Duas armadilhas: a citação agora é `(Silva, 2019)` e não `(SILVA, 2019)`, e a 6023:2025 não tem categoria para preprint nem para documentação de software — que é a maior parte das fontes deste artigo.
 - [Marcadores linguísticos de texto gerado por IA, em português acadêmico](issues/10-marcadores-de-texto-de-ia.md) — tabelas de vocabulário, sintaxe, estrutura e tipografia em `research/04-marcadores-de-ia.md`, com seção de mitos. Contra-achados: excesso de conectivos, voz passiva e vocabulário pobre **não** são marcadores de IA. Não existe estudo de deriva lexical em português, então a tabela de vocabulário é inferência transposta do inglês. Simplificar o texto para parecer humano aumenta o falso positivo dos detectores de 5% para 57%.
+- [O experimento tem um terceiro braço?](issues/07-terceiro-braco.md) — sim, e ele virou o eixo do artigo. O reenquadramento de 2026-08-03 promoveu a condição "escopo de ferramenta reduzido" de braço extra a variável principal, porque é a mitigação que as duas âncoras propõem. A pergunta "quantos braços" morre; sobra qual conjunto de ferramentas cada condição expõe, que migrou para [Desenho das condições de escopo de ferramenta](issues/15-condicoes-de-escopo-de-ferramenta.md). Compute extra e isolamento de contexto seguem confundidos entre C2 e C3 — limitação a declarar.
 - [Literatura primária sobre arquiteturas de agentes LLM](issues/02-literatura-primaria.md) — 37 fontes levantadas (14 revisadas por pares) em `research/02-literatura.md`; τ-bench define o sucesso a adotar, MAST sustenta a discussão, "AI agents that matter" legitima custo como desfecho. Achado que vira contribuição: não há evidência revisada por pares de que supervisor vença agente único.
 
 ## Pré-requisito de código, fora deste mapa
@@ -67,9 +89,13 @@ As duas decisões precisam ser tomadas juntas.
 - Outline final das seções em ABNT e distribuição de páginas.
 - Ameaças à validade a declarar (só fecha depois do protocolo e da escolha de modelo).
 - Roteiro da apresentação em vídeo e o que precisa estar rodando ao vivo.
+- Como as duas âncoras são apresentadas na fundamentação: lado a lado como um único mecanismo, ou uma como efeito de tamanho e outra como efeito de redação. Depende de o ticket 16 entrar ou não.
+- Se o repositório vira artefato citável do artigo (commit congelado, instruções de reprodução) ou fica só como contexto.
 
 ## Out of scope
 
 - Melhorar o chatbot além do estritamente necessário para o experimento.
 - Guardrails, RAG e prompt caching como objetos de estudo (podem aparecer como contexto do sistema, nunca como variável manipulada).
 - Publicar em evento ou periódico.
+- **Comparação direta multi-agente contra agente único como desfecho primário** — fora de escopo desde 2026-08-03. MAST (NeurIPS 2025) e Xu et al. seguem citados na fundamentação e na discussão, mas o artigo não se propõe a decidir essa disputa: ela exige poder estatístico que 15 casos não dão, e nenhuma das duas fontes é âncora demonstrável na prática sobre este repo. O que sobra dela no artigo é a interpretação do contraste C2 contra C3.
+- **Memória de conversa e avaliação multi-turno.** Não existe checkpointer no grafo (`agent.py:289`) e o estado carrega uma mensagem por requisição (`app.py:234`). Construir memória é esforço M que não serve ao eixo de escopo de ferramenta, que é medível em turno único. Declarar como limitação e como trabalho futuro.

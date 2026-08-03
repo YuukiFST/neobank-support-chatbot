@@ -1,7 +1,7 @@
 # 07 — O experimento tem um terceiro braço?
 
 Type: grilling
-Status: open
+Status: resolved
 Blocked by: 03
 
 ## Question
@@ -41,4 +41,12 @@ A favor: sem ele o artigo compara duas arquiteturas; com ele o artigo explica **
 
 ## Answer
 
-<!-- preencher na resolução -->
+**Sim, e ele deixou de ser o terceiro braço — virou o eixo do artigo.** Resolvido em 2026-08-03 pela mudança de destino, não por grilling.
+
+O requisito real da disciplina (dois artigos científicos do mesmo tema + demonstração prática) fez o mapa adotar como âncoras Less is more (DATE 2025) e BiasBusters (ICLR 2026), ambos sobre seleção de ferramentas. Os dois propõem a mesma mitigação: reduzir o conjunto exposto por chamada. Essa é exatamente a variável 2 deste ticket — escopo reduzido de ferramentas por chamada — e a condição proposta aqui deixa de ser opcional.
+
+O que muda em relação à pergunta original: o artigo não compara mais "duas arquiteturas" com uma condição extra pendurada. Ele compara **três condições de escopo de ferramenta**, das quais o multi-agente é uma. A pergunta "quantos braços" perde o sentido; a pergunta que sobra é qual conjunto de ferramentas cada condição expõe.
+
+As decisões 2 (quem detecta o intent), 3 (cabe em 5-7 páginas) e 4 (custo de implementação) **não foram resolvidas** — migraram para [Desenho das condições de escopo de ferramenta](15-condicoes-de-escopo-de-ferramenta.md), decisões 1 e 5.
+
+A variável 1 (compute extra) e a variável 3 (isolamento de contexto) seguem confundidas entre C2 e C3. Isso é limitação a declarar no artigo, não defeito a corrigir — separá-las exigiria mais condições do que cabem em 5-7 páginas.
