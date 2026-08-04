@@ -64,7 +64,12 @@ def test_merge_graph_state() -> None:
 
 
 if __name__ == "__main__":
-    tests = [test_imports, test_create_app_factory, test_agent_graph_compiles, test_merge_graph_state]
+    tests = [
+        test_imports,
+        test_create_app_factory,
+        test_agent_graph_compiles,
+        test_merge_graph_state,
+    ]
     failed = 0
     for t in tests:
         try:

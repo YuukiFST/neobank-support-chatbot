@@ -57,7 +57,10 @@ async def llm_completion(
         )
     except Exception as exc:
         return {
-            "content": "I'm sorry, I'm having trouble connecting to the AI service. Please try again shortly.",
+            "content": (
+                "I'm sorry, I'm having trouble connecting to the AI service. "
+                "Please try again shortly."
+            ),
             "tokens_in": 0,
             "tokens_out": 0,
             "model": model,

@@ -1,6 +1,5 @@
 """Unit tests for LLM configuration and tools."""
 
-import pytest
 from shared.infrastructure.config import Settings
 
 

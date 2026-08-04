@@ -1,6 +1,5 @@
 """Unit tests for guardrails module."""
 
-import pytest
 from services.agent_api.infrastructure.guardrails import (
     guardrail_in,
     guardrail_out,

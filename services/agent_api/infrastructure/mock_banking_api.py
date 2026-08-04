@@ -7,8 +7,6 @@ Deliberate fault injection via FAULT_RATE for retry/backoff testing.
 from __future__ import annotations
 
 import random
-import uuid
-from decimal import Decimal
 from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -22,6 +20,7 @@ router = APIRouter(prefix="/mock", tags=["mock-banking"], dependencies=_mock_dep
 
 
 # --- Request/Response models ---
+
 
 class BalanceResponse(BaseModel):
     customer_id: str
@@ -82,11 +81,22 @@ class ErrorResponse(BaseModel):
 
 # --- Fault injection ---
 
+
 def _check_fault() -> None:
     if settings.fault_rate > 0 and random.random() < settings.fault_rate:
         if random.random() < 0.5:
-            raise HTTPException(status_code=500, detail={"code": "INTERNAL_ERROR", "message": "Simulated failure", "retryable": True})
-        raise HTTPException(status_code=504, detail={"code": "TIMEOUT", "message": "Simulated timeout", "retryable": True})
+            raise HTTPException(
+                status_code=500,
+                detail={
+                    "code": "INTERNAL_ERROR",
+                    "message": "Simulated failure",
+                    "retryable": True,
+                },
+            )
+        raise HTTPException(
+            status_code=504,
+            detail={"code": "TIMEOUT", "message": "Simulated timeout", "retryable": True},
+        )
 
 
 # --- In-memory seed data (loaded from SQL seeds at startup) ---
@@ -100,6 +110,7 @@ def load_seed_data(data: dict[str, Any]) -> None:
 
 
 # --- Endpoints ---
+
 
 @router.get("/health")
 async def mock_health() -> dict[str, str]:
@@ -117,7 +128,10 @@ async def get_balance(customer_id: str) -> BalanceResponse:
                 account_id=acc["id"],
                 balance=float(acc["balance"]),
             )
-    raise HTTPException(status_code=404, detail={"code": "NOT_FOUND", "message": "Account not found", "retryable": False})
+    raise HTTPException(
+        status_code=404,
+        detail={"code": "NOT_FOUND", "message": "Account not found", "retryable": False},
+    )
 
 
 @router.get("/accounts/{customer_id}/transactions", response_model=TransactionsResponse)
@@ -165,7 +179,10 @@ async def get_invoice(card_id: str) -> InvoiceResponse:
                 status=inv["status"],
                 due_date=inv.get("due_date"),
             )
-    raise HTTPException(status_code=404, detail={"code": "NOT_FOUND", "message": "No open invoice found", "retryable": False})
+    raise HTTPException(
+        status_code=404,
+        detail={"code": "NOT_FOUND", "message": "No open invoice found", "retryable": False},
+    )
 
 
 @router.post("/cards/{card_id}/pay", response_model=PayInvoiceResponse)
@@ -180,7 +197,10 @@ async def pay_invoice(card_id: str) -> PayInvoiceResponse:
                 status="paid",
                 message=f"Invoice for {inv['month']} paid successfully (simulated)",
             )
-    raise HTTPException(status_code=404, detail={"code": "NOT_FOUND", "message": "No open invoice found", "retryable": False})
+    raise HTTPException(
+        status_code=404,
+        detail={"code": "NOT_FOUND", "message": "No open invoice found", "retryable": False},
+    )
 
 
 @router.post("/cards/{card_id}/limit-increase", response_model=LimitIncreaseResponse)
@@ -195,9 +215,15 @@ async def request_limit_increase(card_id: str) -> LimitIncreaseResponse:
                 card_id=card_id,
                 approved=True,
                 new_limit=max_auto,
-                reason=f"Auto-approved: {current_limit:.2f} -> {max_auto:.2f} (within 1.5x ceiling, no risk flags)",
+                reason=(
+                    f"Auto-approved: {current_limit:.2f} -> {max_auto:.2f} "
+                    "(within 1.5x ceiling, no risk flags)"
+                ),
             )
-    raise HTTPException(status_code=404, detail={"code": "NOT_FOUND", "message": "Card not found", "retryable": False})
+    raise HTTPException(
+        status_code=404,
+        detail={"code": "NOT_FOUND", "message": "Card not found", "retryable": False},
+    )
 
 
 @router.post("/cards/{card_id}/block", response_model=BlockCardResponse)
@@ -212,7 +238,10 @@ async def block_card(card_id: str) -> BlockCardResponse:
                 state="blocked",
                 message="Card blocked successfully (simulated). A replacement card will be sent.",
             )
-    raise HTTPException(status_code=404, detail={"code": "NOT_FOUND", "message": "Card not found", "retryable": False})
+    raise HTTPException(
+        status_code=404,
+        detail={"code": "NOT_FOUND", "message": "Card not found", "retryable": False},
+    )
 
 
 @router.get("/investments/{customer_id}", response_model=InvestmentsResponse)

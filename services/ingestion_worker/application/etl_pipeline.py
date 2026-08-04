@@ -6,25 +6,26 @@ Run on demand + on schedule via Redis queue.
 
 from __future__ import annotations
 
-import os
 import re
 import uuid
 from pathlib import Path
 from typing import Any
 
 try:
-    import chromadb
+    # Availability probe only — the client itself comes from shared.infrastructure.chroma_client
+    import chromadb  # noqa: F401
+
     CHROMA_AVAILABLE = True
 except ImportError:
     CHROMA_AVAILABLE = False
 
 try:
     from sentence_transformers import SentenceTransformer
+
     ST_AVAILABLE = True
 except ImportError:
     ST_AVAILABLE = False
 
-from shared.infrastructure.config import settings
 from shared.infrastructure.chroma_client import get_or_create_collection
 from shared.infrastructure.observability import log
 
@@ -35,16 +36,20 @@ KB_BASE_DIR = Path(__file__).resolve().parents[3] / "data" / "kb"
 _model = None
 
 
-def _get_model():
+def _get_model() -> Any:
     global _model
     if _model is None:
         if not ST_AVAILABLE:
-            raise ImportError("sentence-transformers not installed. Install with: pip install sentence-transformers")
+            raise ImportError(
+                "sentence-transformers not installed. "
+                "Install with: pip install sentence-transformers"
+            )
         _model = SentenceTransformer("BAAI/bge-m3")
     return _model
 
 
 # --- Extract ---
+
 
 def _resolve_kb_dir(data_dir: str) -> Path:
     """Resolve and validate KB directory stays within trusted base."""
@@ -63,20 +68,24 @@ def extract_kb_sources(data_dir: str = "data/kb") -> list[dict[str, Any]]:
     for file_path in kb_path.rglob("*"):
         if file_path.suffix == ".md":
             content = file_path.read_text(encoding="utf-8")
-            sources.append({
-                "source": str(file_path),
-                "content": content,
-                "type": "markdown",
-                "language": "pt/en",
-            })
+            sources.append(
+                {
+                    "source": str(file_path),
+                    "content": content,
+                    "type": "markdown",
+                    "language": "pt/en",
+                }
+            )
         elif file_path.suffix == ".csv":
             content = file_path.read_text(encoding="utf-8")
-            sources.append({
-                "source": str(file_path),
-                "content": content,
-                "type": "csv",
-                "language": "pt/en",
-            })
+            sources.append(
+                {
+                    "source": str(file_path),
+                    "content": content,
+                    "type": "csv",
+                    "language": "pt/en",
+                }
+            )
 
     log.info("kb_extracted", sources=len(sources))
     return sources
@@ -84,9 +93,10 @@ def extract_kb_sources(data_dir: str = "data/kb") -> list[dict[str, Any]]:
 
 # --- Transform + Chunk ---
 
+
 def _chunk_markdown(content: str, source: str, chunk_size: int = 500) -> list[dict[str, Any]]:
     """Chunk markdown content by section headers."""
-    chunks = []
+    chunks: list[dict[str, Any]] = []
     sections = re.split(r"\n(?=##\s)", content)
 
     for section in sections:
@@ -102,33 +112,39 @@ def _chunk_markdown(content: str, source: str, chunk_size: int = 500) -> list[di
             current_chunk = ""
             for para in paragraphs:
                 if len(current_chunk) + len(para) > chunk_size and current_chunk:
-                    chunks.append({
-                        "id": str(uuid.uuid4()),
-                        "content": current_chunk.strip(),
-                        "metadata": {"source": source, "section": header, "type": "faq"},
-                    })
+                    chunks.append(
+                        {
+                            "id": str(uuid.uuid4()),
+                            "content": current_chunk.strip(),
+                            "metadata": {"source": source, "section": header, "type": "faq"},
+                        }
+                    )
                     current_chunk = para
                 else:
                     current_chunk += "\n\n" + para if current_chunk else para
             if current_chunk.strip():
-                chunks.append({
-                    "id": str(uuid.uuid4()),
-                    "content": current_chunk.strip(),
-                    "metadata": {"source": source, "section": header, "type": "faq"},
-                })
+                chunks.append(
+                    {
+                        "id": str(uuid.uuid4()),
+                        "content": current_chunk.strip(),
+                        "metadata": {"source": source, "section": header, "type": "faq"},
+                    }
+                )
         else:
-            chunks.append({
-                "id": str(uuid.uuid4()),
-                "content": section.strip(),
-                "metadata": {"source": source, "section": header, "type": "faq"},
-            })
+            chunks.append(
+                {
+                    "id": str(uuid.uuid4()),
+                    "content": section.strip(),
+                    "metadata": {"source": source, "section": header, "type": "faq"},
+                }
+            )
 
     return chunks
 
 
 def _chunk_csv(content: str, source: str) -> list[dict[str, Any]]:
     """Chunk CSV content — each row becomes a document."""
-    chunks = []
+    chunks: list[dict[str, Any]] = []
     lines = content.strip().split("\n")
     if len(lines) < 2:
         return chunks
@@ -137,12 +153,14 @@ def _chunk_csv(content: str, source: str) -> list[dict[str, Any]]:
     for line in lines[1:]:
         values = [v.strip() for v in line.split(",")]
         if len(values) == len(headers):
-            doc = " | ".join(f"{h}: {v}" for h, v in zip(headers, values))
-            chunks.append({
-                "id": str(uuid.uuid4()),
-                "content": doc,
-                "metadata": {"source": source, "type": "fee"},
-            })
+            doc = " | ".join(f"{h}: {v}" for h, v in zip(headers, values, strict=True))
+            chunks.append(
+                {
+                    "id": str(uuid.uuid4()),
+                    "content": doc,
+                    "metadata": {"source": source, "type": "fee"},
+                }
+            )
 
     return chunks
 
@@ -162,6 +180,7 @@ def transform_and_chunk(sources: list[dict[str, Any]]) -> list[dict[str, Any]]:
 
 # --- Embed + Load ---
 
+
 def embed_and_load(chunks: list[dict[str, Any]]) -> int:
     """Embed chunks and upsert into Chroma."""
     if not chunks:
@@ -177,8 +196,8 @@ def embed_and_load(chunks: list[dict[str, Any]]) -> int:
     # Upsert into Chroma
     batch_size = 100
     for i in range(0, len(chunks), batch_size):
-        batch = chunks[i:i + batch_size]
-        batch_embeddings = embeddings[i:i + batch_size]
+        batch = chunks[i : i + batch_size]
+        batch_embeddings = embeddings[i : i + batch_size]
         collection.upsert(
             ids=[c["id"] for c in batch],
             documents=[c["content"] for c in batch],
@@ -191,6 +210,7 @@ def embed_and_load(chunks: list[dict[str, Any]]) -> int:
 
 
 # --- Main ETL entry point ---
+
 
 def run_ingestion(data_dir: str = "data/kb") -> int:
     """Run the full ETL pipeline."""

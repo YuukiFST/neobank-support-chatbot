@@ -1,3 +1,7 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
 [project]
 name = "neobank-support"
 version = "0.1.0"
@@ -47,17 +51,35 @@ streamlit = [
     "streamlit>=1.40,<2",
 ]
 
+[tool.setuptools.packages.find]
+include = ["shared*", "services*"]
+
 [tool.ruff]
 target-version = "py312"
 line-length = 100
+# Ruff 0.16 formats Python code blocks inside Markdown. The snippets in plans/ and .scratch/
+# are quoted evidence with the indentation they have in the source file — reformatting them
+# corrupts the citation.
+extend-exclude = ["*.md"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "N", "UP", "B", "A", "C4", "SIM", "TCH"]
+
+[tool.ruff.lint.per-file-ignores]
+# agent.py holds the system prompts as triple-quoted literals. Re-wrapping a line there
+# inserts a newline into the text sent to the model, which changes behaviour — and these
+# prompts are the object under study. A `# noqa` cannot help: inside a triple-quoted
+# string the comment would become part of the prompt.
+"services/agent_api/application/agent.py" = ["E501"]
 
 [tool.mypy]
 python_version = "3.12"
 strict = true
 plugins = ["pydantic.mypy"]
+
+[[tool.mypy.overrides]]
+module = ["litellm.*", "langgraph.*", "chromadb.*", "sentence_transformers.*"]
+ignore_missing_imports = true
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"

@@ -9,9 +9,11 @@ import pytest
 import pytest_asyncio
 from httpx import ASGITransport, AsyncClient
 
+
 async def _db_available() -> bool:
     try:
         from sqlalchemy import text
+
         from shared.infrastructure.database import async_session
 
         async with async_session() as session:
@@ -23,11 +25,13 @@ async def _db_available() -> bool:
 
 def pytest_configure(config):
     config.addinivalue_line("markers", "requires_db: test needs a running PostgreSQL instance")
+
+
 _STDCXX = "/nix/store/hngmi01i8wgi25a0byrxcn4ysz5j79mw-gcc-15.2.0-lib/lib"
 if os.path.isdir(_STDCXX):
     os.environ.setdefault("LD_LIBRARY_PATH", _STDCXX)
 
-from services.agent_api.infrastructure.mock_banking_api import load_seed_data
+from services.agent_api.infrastructure.mock_banking_api import load_seed_data  # noqa: E402
 
 CUSTOMER_MARIA = "11111111-1111-1111-1111-111111111111"
 ACCOUNT_MARIA = "aaaa1111-1111-1111-1111-111111111111"
@@ -106,8 +110,8 @@ def seed_mock_api():
 @pytest_asyncio.fixture
 async def client():
     """Async HTTP client for integration/e2e tests."""
-    from services.agent_api.interface.app import app
     from services.agent_api.application.agent import create_agent_graph
+    from services.agent_api.interface.app import app
 
     app.state.agent_graph = create_agent_graph()
 
@@ -121,8 +125,8 @@ async def e2e_client():
     """E2E client with fake DB and mock LLM — no Postgres/Ollama required."""
     from unittest.mock import patch
 
-    from services.agent_api.interface.app import app
     from services.agent_api.application.agent import create_agent_graph
+    from services.agent_api.interface.app import app
     from tests.support.fake_db import FakeSessionMaker, reset_fake_db
     from tests.support.mock_llm import mock_llm_completion
 

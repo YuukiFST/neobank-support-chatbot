@@ -3,11 +3,11 @@
 import pytest
 
 from services.agent_api.application.tools import (
+    INTENT_TOOLS,
+    TOOL_REGISTRY,
     execute_tools_for_intent,
     get_balance,
     get_cards,
-    INTENT_TOOLS,
-    TOOL_REGISTRY,
 )
 from tests.conftest import CUSTOMER_MARIA
 

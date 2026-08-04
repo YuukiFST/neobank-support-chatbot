@@ -7,7 +7,10 @@ from typing import Any
 
 def _intent_from_message(text: str) -> str:
     lower = text.lower()
-    if any(w in lower for w in ("fraude", "fraud", "sem autorização", "unauthorized", "sem autorizacao")):
+    if any(
+        w in lower
+        for w in ("fraude", "fraud", "sem autorização", "unauthorized", "sem autorizacao")
+    ):
         return "fraud_dispute"
     if any(w in lower for w in ("saldo", "balance")):
         return "balance"

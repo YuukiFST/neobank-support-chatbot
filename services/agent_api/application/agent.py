@@ -9,34 +9,34 @@ from __future__ import annotations
 
 import json
 import re
-from typing import Annotated, TypedDict
+from typing import Annotated, Any, TypedDict
 
+from langchain_core.messages import HumanMessage
 from langgraph.graph import END, StateGraph
 from langgraph.graph.message import add_messages
-from langchain_core.messages import HumanMessage
 
-from shared.infrastructure.llm import llm_completion
-from shared.infrastructure.chroma_client import query_kb
-from shared.infrastructure.observability import log
-from services.agent_api.infrastructure.guardrails import guardrail_in, guardrail_out
 from services.agent_api.application.tools import execute_tools_for_intent
-
+from services.agent_api.infrastructure.guardrails import guardrail_in, guardrail_out
+from shared.infrastructure.chroma_client import query_kb
+from shared.infrastructure.llm import llm_completion
+from shared.infrastructure.observability import log
 
 # --- State ---
 
+
 class AgentState(TypedDict):
-    messages: Annotated[list, add_messages]
+    messages: Annotated[list[Any], add_messages]
     customer_id: str
     customer_document: str
     session_id: str
     language: str
     intent: str
-    tool_calls: list[dict]
+    tool_calls: list[dict[str, Any]]
     tool_results: list[str]
     response: str
-    handoff: dict | None
-    guardrail_in_result: dict | None
-    guardrail_out_result: dict | None
+    handoff: dict[str, Any] | None
+    guardrail_in_result: dict[str, Any] | None
+    guardrail_out_result: dict[str, Any] | None
     error: str | None
 
 
@@ -82,7 +82,8 @@ Apply these rules:
 
 # --- Graph nodes ---
 
-def node_guardrail_in(state: AgentState) -> dict:
+
+def node_guardrail_in(state: AgentState) -> dict[str, Any]:
     """Pre-LLM guardrail: detect injection and out-of-scope requests."""
     last_msg = state["messages"][-1]
     content = last_msg.content if hasattr(last_msg, "content") else str(last_msg)
@@ -91,7 +92,7 @@ def node_guardrail_in(state: AgentState) -> dict:
     return {"guardrail_in_result": {"passed": result.passed, "reason": result.reason}}
 
 
-async def async_router(state: AgentState) -> dict:
+async def async_router(state: AgentState) -> dict[str, Any]:
     """Async router node."""
     last_msg = state["messages"][-1]
     content = last_msg.content if hasattr(last_msg, "content") else str(last_msg)
@@ -114,13 +115,18 @@ async def async_router(state: AgentState) -> dict:
     except (json.JSONDecodeError, KeyError):
         pass
 
-    log.info("router", intent=intent, tokens_in=result["tokens_in"], tokens_out=result["tokens_out"])
+    log.info(
+        "router", intent=intent, tokens_in=result["tokens_in"], tokens_out=result["tokens_out"]
+    )
     return {"intent": intent}
 
 
-def _make_specialist_node(specialist_name: str):
+# Return type is Any because LangGraph's add_node overloads reject the precise
+# Callable[[AgentState], Awaitable[dict[str, Any]]] signature.
+def _make_specialist_node(specialist_name: str) -> Any:
     """Create an async specialist node that runs tools before LLM."""
-    async def specialist_node(state: AgentState) -> dict:
+
+    async def specialist_node(state: AgentState) -> dict[str, Any]:
         language = state.get("language", "pt")
         intent = state.get("intent", "")
         customer_id = state["customer_id"]
@@ -163,7 +169,7 @@ def _make_specialist_node(specialist_name: str):
     return specialist_node
 
 
-async def node_escalation(state: AgentState) -> dict:
+async def node_escalation(state: AgentState) -> dict[str, Any]:
     """Build handoff payload for human escalation."""
     language = state.get("language", "pt")
     intent = state.get("intent", "unknown")
@@ -200,7 +206,7 @@ async def node_escalation(state: AgentState) -> dict:
     return {"handoff": handoff, "response": response}
 
 
-async def node_guardrail_out(state: AgentState) -> dict:
+async def node_guardrail_out(state: AgentState) -> dict[str, Any]:
     """Post-LLM guardrail: check response for leaks and advice."""
     response = state.get("response", "")
     result = guardrail_out(response, state.get("customer_document", ""))
@@ -208,7 +214,10 @@ async def node_guardrail_out(state: AgentState) -> dict:
 
     if not result.passed:
         return {
-            "response": "I'm sorry, I cannot provide that information. Let me connect you with a human agent.",
+            "response": (
+                "I'm sorry, I cannot provide that information. "
+                "Let me connect you with a human agent."
+            ),
             "guardrail_out_result": {"passed": False, "reason": result.reason},
         }
     return {"guardrail_out_result": {"passed": True}}
@@ -216,8 +225,9 @@ async def node_guardrail_out(state: AgentState) -> dict:
 
 # --- Route logic ---
 
+
 def route_after_guardrail_in(state: AgentState) -> str:
-    if state.get("guardrail_in_result", {}).get("passed", True):
+    if (state.get("guardrail_in_result") or {}).get("passed", True):
         return "router"
     return "blocked_response"
 
@@ -235,12 +245,14 @@ def route_after_router(state: AgentState) -> str:
     return "escalation"
 
 
-async def node_blocked_response(state: AgentState) -> dict:
+async def node_blocked_response(state: AgentState) -> dict[str, Any]:
     """Response when guardrail_in blocks the message."""
-    return {"response": "I'm sorry, I cannot process that request. Please try rephrasing your question."}
+    return {
+        "response": "I'm sorry, I cannot process that request. Please try rephrasing your question."
+    }
 
 
-def merge_graph_state(accumulated: dict, delta: dict) -> dict:
+def merge_graph_state(accumulated: dict[str, Any], delta: dict[str, Any]) -> dict[str, Any]:
     """Merge LangGraph node deltas into accumulated state."""
     merged = {**accumulated}
     for key, value in delta.items():
@@ -251,7 +263,8 @@ def merge_graph_state(accumulated: dict, delta: dict) -> dict:
 
 # --- Build graph ---
 
-def create_agent_graph():
+
+def create_agent_graph() -> Any:
     """Build the LangGraph multi-agent graph."""
     graph = StateGraph(AgentState)
 
@@ -266,17 +279,25 @@ def create_agent_graph():
     graph.add_node("guardrail_out", node_guardrail_out)
 
     graph.set_entry_point("guardrail_in")
-    graph.add_conditional_edges("guardrail_in", route_after_guardrail_in, {
-        "router": "router",
-        "blocked_response": "blocked_response",
-    })
-    graph.add_conditional_edges("router", route_after_router, {
-        "account_specialist": "account_specialist",
-        "card_specialist": "card_specialist",
-        "kb_specialist": "kb_specialist",
-        "risk_specialist": "risk_specialist",
-        "escalation": "escalation",
-    })
+    graph.add_conditional_edges(
+        "guardrail_in",
+        route_after_guardrail_in,
+        {
+            "router": "router",
+            "blocked_response": "blocked_response",
+        },
+    )
+    graph.add_conditional_edges(
+        "router",
+        route_after_router,
+        {
+            "account_specialist": "account_specialist",
+            "card_specialist": "card_specialist",
+            "kb_specialist": "kb_specialist",
+            "risk_specialist": "risk_specialist",
+            "escalation": "escalation",
+        },
+    )
 
     for specialist in ["account_specialist", "card_specialist", "kb_specialist"]:
         graph.add_edge(specialist, "guardrail_out")

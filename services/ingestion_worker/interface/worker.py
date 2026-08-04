@@ -4,26 +4,29 @@ from __future__ import annotations
 
 import asyncio
 import json
-import sys
 import uuid
-from datetime import datetime
-from pathlib import Path
+from typing import TYPE_CHECKING, Any, cast
 
-import redis.asyncio as aioredis
-
-from shared.infrastructure.config import settings
-from shared.infrastructure.database import async_session, engine, Base
-from shared.infrastructure.observability import log
-from services.ingestion_worker.application.etl_pipeline import run_ingestion
 from sqlalchemy import text
 
+from services.ingestion_worker.application.etl_pipeline import run_ingestion
+from shared.infrastructure.database import async_session
+from shared.infrastructure.observability import log
+from shared.infrastructure.redis_client import get_redis
+
+if TYPE_CHECKING:
+    from collections.abc import Awaitable
+
+# redis-py 5.x shares the command mixins between the sync and async clients, so every command
+# is annotated `Awaitable[T] | T`. The casts below state which half applies on the async client;
+# they document the library's typing, they do not assert anything about runtime values.
 
 # Job types
 JOB_INGESTION = "ingestion"
 JOB_ESCALATION = "escalation"
 
 
-async def process_ingestion_job(payload: dict) -> None:
+async def process_ingestion_job(payload: dict[str, Any]) -> None:
     """Process a KB ingestion job."""
     data_dir = payload.get("data_dir", "data/kb")
     log.info("processing_ingestion_job", data_dir=data_dir)
@@ -31,7 +34,7 @@ async def process_ingestion_job(payload: dict) -> None:
     log.info("ingestion_job_complete", chunks=count)
 
 
-async def process_escalation_job(payload: dict) -> None:
+async def process_escalation_job(payload: dict[str, Any]) -> None:
     """Process an escalation job — persist handoff and publish event."""
     log.info("processing_escalation_job", payload=payload)
 
@@ -52,13 +55,18 @@ async def process_escalation_job(payload: dict) -> None:
         await session.commit()
 
     # Publish escalation.created event
-    redis = aioredis.from_url(settings.redis_url)
-    await redis.publish("events", json.dumps({
-        "event": "escalation.created",
-        "handoff_id": str(payload.get("id", "")),
-        "customer_id": payload["customer_id"],
-        "intent": payload.get("intent", "unknown"),
-    }))
+    redis = await get_redis()
+    await redis.publish(
+        "events",
+        json.dumps(
+            {
+                "event": "escalation.created",
+                "handoff_id": str(payload.get("id", "")),
+                "customer_id": payload["customer_id"],
+                "intent": payload.get("intent", "unknown"),
+            }
+        ),
+    )
     await redis.close()
 
     log.info("escalation_job_complete", handoff_id=payload.get("id"))
@@ -66,13 +74,15 @@ async def process_escalation_job(payload: dict) -> None:
 
 async def worker_loop() -> None:
     """Main worker loop — consume jobs from Redis queue."""
-    redis = aioredis.from_url(settings.redis_url)
+    redis = await get_redis()
     log.info("ingestion_worker_started")
 
     while True:
         try:
             # Block-pop from queue with 5s timeout
-            result = await redis.brpop("neobank:queue", timeout=5)
+            result = await cast(
+                "Awaitable[list[Any] | None]", redis.brpop(["neobank:queue"], timeout=5)
+            )
             if result is None:
                 continue
 
@@ -98,10 +108,12 @@ async def worker_loop() -> None:
                 # Requeue with incremented attempts
                 if attempts < 3:
                     job["attempts"] = attempts + 1
-                    await redis.lpush("neobank:queue", json.dumps(job))
+                    await cast("Awaitable[int]", redis.lpush("neobank:queue", json.dumps(job)))
                 else:
                     # Dead letter
-                    await redis.lpush("neobank:dead_letter", json.dumps(job))
+                    await cast(
+                        "Awaitable[int]", redis.lpush("neobank:dead_letter", json.dumps(job))
+                    )
                     log.error("job_dead_letter", job_id=job_id)
 
         except asyncio.CancelledError:

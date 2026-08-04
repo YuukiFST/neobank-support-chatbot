@@ -7,7 +7,7 @@ from contextlib import asynccontextmanager
 from typing import Any
 from unittest.mock import patch
 
-from tests.conftest import CUSTOMER_MARIA, _test_seed_data
+from tests.conftest import _test_seed_data
 
 _SEED = _test_seed_data()
 _CUSTOMERS = _SEED["customers"]
